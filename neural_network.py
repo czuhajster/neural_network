@@ -92,12 +92,25 @@ class Sigmoid:
         self.vectorised_func = np.vectorize(self.func)
         self.vectorised_der = np.vectorize(self.der)
         
-    def func(self, x):
-        """Calculates output of the Sigmoid function."""
+    def func(self, x: float):
+        """Calculates output of the Sigmoid function.
+        
+        Args:
+            x: Input to the sigmoid function.
+            
+        Returns:
+            A float representing the output of sigmoid.
+        """
         return 1 / (1 + np.e ** (-x))
     
-    def der(self, x):
+    def der(self, x: float):
         """Calculates output of the derivative of the Sigmoid function.
+        
+        Args:
+            x: Input to the derivative of sigmoid.
+            
+        Returns:
+            A float representing the output of sigmoid's derivative.
         """
         return self.func(x) * (1 - self.func(x))
 
@@ -110,12 +123,25 @@ class Tanh:
         self.vectorised_func = np.vectorize(self.func)
         self.vectorised_der = np.vectorize(self.der)
     
-    def func(self, x):
-        """Calculates output of the tanh function."""
+    def func(self, x: float):
+        """Calculates output of the tanh function.
+        
+        Args:
+            x: Input to the tanh function.
+            
+        Returns:
+            A float representing the output of tanh.
+        """
         return (np.e ** x - np.e ** (-x)) / (np.e ** x + np.e ** (-x))
     
-    def der(self, x):
+    def der(self, x: float):
         """Calculates output of the derivative of the tanh function.
+        
+        Args:
+            x: Input to the derivative of tanh.
+            
+        Returns:
+            A float representing the output of tanh's derivative.
         """
         return 1 - self.func(x) ** 2
 
@@ -128,15 +154,28 @@ class Relu:
         self.vectorised_func = np.vectorize(self.func)
         self.vectorised_der = np.vectorize(self.der)
     
-    def func(self, x):
-        """Calculates output of the ReLU function."""
+    def func(self, x: float):
+        """Calculates output of the ReLU function.
+        
+        Args:
+            x: Input to the ReLU function.
+            
+        Returns:
+            A float representing the output of ReLU.
+        """
         if x > 0:
             return x
         else:
             return 0
     
-    def der(self, x):
+    def der(self, x: float):
         """Calculates output of the derivative of the ReLU function.
+        
+        Args:
+            x: Input to the derivative of ReLU.
+            
+        Returns:
+            A float representing the output of ReLU's derivative.
         """
         if x > 0:
             return 1
@@ -152,15 +191,28 @@ class LeakyRelu:
         self.vectorised_func = np.vectorize(self.func)
         self.vectorised_der = np.vectorize(self.der)
     
-    def func(self, x):
-        """Calculates output of the Leaky ReLU function."""
+    def func(self, x: float):
+        """Calculates output of the Leaky ReLU function.
+        
+        Args:
+            x: Input to the Leaky ReLU function.
+            
+        Returns:
+            A float representing the output of Leaky ReLU.
+        """
         if x > 0:
             return x
         else:
             return 0.01 * x
     
-    def der(self, x):
+    def der(self, x: float):
         """Calculates output of the derivative of the Leaky ReLU function.
+        
+        Args:
+            x: Input to the derivative of Leaky ReLU.
+            
+        Returns:
+            A float representing the output of Leaky ReLU's derivative.
         """
         if x > 0:
             return 1
@@ -172,9 +224,17 @@ class Backpropagation:
     
     Attributes:
         neural_network: NeuralNetwork instance being trained.
-        epochs: Number of epochs the nerual network has gone through during the training.
+        epochs: Number of epochs the nerual network has gone through
+            during the training.
         previous_validation_error: Previous error (MSE) on the validation set.
         previous_training_error: Previous error (MSE) on the training set.
+        validation_errors: List of validation errors. Used for plotting.
+        training_errors: List of training errors. Used for plotting.
+        tested_at_epochs: List epochs training and validation errors were
+            calculated at.
+        delta: List of arrays of delta values for neurons in the network.
+            Each element of the list is an array representing delta values
+            for a particular layer.
     """
     
     def __init__(
@@ -189,6 +249,10 @@ class Backpropagation:
         self.validation_errors = []
         self.training_errors = []
         self.tested_at_epochs = []
+        self.delta = []
+        # Initialise the delta attribute.
+        for layer in self.neural_network.layers:
+            self.delta.append(None)
     
     def train(
         self,
@@ -226,7 +290,7 @@ class Backpropagation:
             weight_decay: Boolean flag indicating if weight decay should
                 be used.
         """
-        # Loop through the training set.
+        # Run for the specified number of epochs.
         for i in range(epoch_limit):
             if simulated_annealing:
                 # Anneal the learning rate.
@@ -237,11 +301,14 @@ class Backpropagation:
                     epochs_passed=self.epochs
                 )
             self.epochs = i + 1
+            # Loop through the training set and perform forward pass,
+            # backward pass, and weights/biases update.
             for training_example in training_set:
                 # Split individual examples into inputs (item) and label (c).
                 item, c = np.hsplit(training_example, [training_set.shape[1] - 1])
                 item = item.reshape(1, -1)
                 c = c.reshape(1, -1)
+                # Perform the backpropagation's steps.
                 self.forward_pass(item)
                 self.backward_pass(c, self.epochs, learning_rate, weight_decay)
                 self.update_weights(item, learning_rate, momentum)
@@ -259,9 +326,9 @@ class Backpropagation:
                 for layer in self.neural_network.layers:
                     layer.save_weights_and_biases()
             
-            # Test on validation set.
+            # Test on the training and validation sets.
             if validation_set is not None and (i + 1) % validation_frequency == 0:
-                # Test on training set.
+                # Test on the training set.
                 observed_test, predicted_test = self.neural_network.test(
                     training_set,
                     max_value,
@@ -269,7 +336,7 @@ class Backpropagation:
                 )
                 current_test_error = mse(observed_test, predicted_test)
                 self.training_errors.append(current_test_error)
-                
+                # Test on the validation set.
                 observed, predicted = self.neural_network.test(
                     validation_set,
                     max_value,
@@ -279,6 +346,7 @@ class Backpropagation:
                 self.validation_errors.append(current_validation_error)
                 self.tested_at_epochs.append(self.epochs)
                 print(f"Current Validation Error: {current_validation_error}")
+                # Terminate if the validation error has started to increase.
                 if self.previous_validation_error < current_validation_error:
                     for layer in self.neural_network.layers:
                         layer.restore_weights_and_biases()
@@ -314,13 +382,18 @@ class Backpropagation:
 
         Args:
             c: The label for the training example.
+            epochs_passed: The number of epochs passed.
+            learning_rate: The learning rate.
+            weight_decay: Boolean flag singaling use of weight decay.
+                Weight decay is used if the flag is set to True.
         """
+        reversed_delta = list(reversed(self.delta))
         reversed_layers = list(reversed(self.neural_network.layers))
         for i, layer in enumerate(reversed_layers):
             if i == 0:
                 # output layer backward pass
                 if weight_decay:
-                    layer.delta = np.multiply(
+                    reversed_delta[i] = np.multiply(
                         c - layer.output + self.weight_decay(
                             epochs_passed,
                             learning_rate
@@ -328,17 +401,18 @@ class Backpropagation:
                         layer.activation_function.vectorised_der(layer.sum)
                     )
                 else:
-                    layer.delta = np.multiply(
+                    reversed_delta[i] = np.multiply(
                         c - layer.output,
                         layer.activation_function.vectorised_der(layer.sum)
                     )
             else:
                 # hidden layer backward pass
                 next_layer = reversed_layers[i-1]
-                layer.delta = np.multiply(
-                    np.dot(next_layer.weights, next_layer.delta.T).T,
+                reversed_delta[i] = np.multiply(
+                    np.dot(next_layer.weights, reversed_delta[i-1].T).T,
                     layer.activation_function.vectorised_der(layer.sum)
                 )
+        self.delta = list(reversed(reversed_delta))
             
     def update_weights(
         self,
@@ -359,14 +433,14 @@ class Backpropagation:
                 previous_weights = layer.weights.copy()
                 previous_biases = layer.biases.copy()
             if i == 0:
-                layer.weights = layer.weights + learning_rate * np.dot(inputs.T, layer.delta)
+                layer.weights = layer.weights + learning_rate * np.dot(inputs.T, self.delta[i])
             else:
                 previous_layer = self.neural_network.layers[i-1]
                 layer.weights = layer.weights + learning_rate * np.dot(
                     previous_layer.output.T,
-                    layer.delta
+                    self.delta[i]
                 )
-            layer.biases = layer.biases + learning_rate * layer.delta
+            layer.biases = layer.biases + learning_rate * self.delta[i]
             if momentum > 0:
                 weights_delta = layer.weights - previous_weights
                 biases_delta = layer.biases - previous_biases
@@ -392,9 +466,11 @@ class Backpropagation:
             learning_rate = learning_rate * 0.7
             for layer in self.neural_network.layers:
                 layer.restore_weights_and_biases()
+            print("Error increased")
         elif ((current_training_error / self.previous_training_error) * 100) <= 96:
             # Increase the learning rate if the error has decreased.
             learning_rate = learning_rate * 1.05
+            print("Error decreased")
         # Check if the learning rate is the range.
         if learning_rate < 0.01:
             learning_rate = 0.01
@@ -419,7 +495,7 @@ class Backpropagation:
             epochs_passed: Number of epochs that have elapsed.
 
         Returns:
-            A float representing annealed learning rate.
+            A float representing the annealed learning rate.
         """
         divisor = 1 + np.e ** (10 - (20 * epochs_passed) /  epoch_limit)
         return end_rate + (start_rate - end_rate) * (1 - (1 / divisor))
@@ -452,8 +528,8 @@ class Backpropagation:
         regularisation_parameter = 1 / (learning_rate * epochs_passed)
         return regularisation_parameter * omega
 
-
 np.random.seed(0)
+
 
 class Layer:
     """Layer of a neural network.
@@ -466,7 +542,6 @@ class Layer:
         output: the most recent output of the layer.
         saved_weights: Weights saved at previous validaton point.
         saved_biases: Biases saved at previous validaton point.
-        delta: Delta values for neurons on the layer.
     """
     def __init__(self,
                  number_of_inputs: int,
@@ -491,10 +566,9 @@ class Layer:
             size=(1, number_of_neurons)
         )
         self.saved_biases = self.biases.copy()
-        self.delta = np.nan
     
     def forward_pass(self, inputs: np.ndarray):
-        """Does the forward pass through the layer.
+        """Performs the forward pass through the layer.
         
         Args:
             inputs: Inputs to the layer.
@@ -503,20 +577,18 @@ class Layer:
         self.output = self.activation_function.vectorised_func(self.sum)
             
     def save_weights_and_biases(self):
-        """Saves current weights and biases to keep them after updating.
-        """
+        """Saves current weights and biases to keep them after updating."""
         self.saved_weights = self.weights.copy()
         self.saved_biases = self.biases.copy()
         
     def restore_weights_and_biases(self):
-        """Restores saved weights and biases.
-        """
+        """Restores saved weights and biases."""
         self.weights = self.saved_weights
         self.biases = self.saved_biases     
 
 
 class NeuralNetwork:
-    """A neural network with single hidden layer and single node on the output layer.
+    """A neural network.
     
     Attributes:
         number_of_inputs: Number of inputs to the network.
@@ -528,7 +600,17 @@ class NeuralNetwork:
         number_of_inputs: int,
         network_architecture,
     ):
-        """Initialises a NeuralNetwork instance."""
+        """Initialises a NeuralNetwork instance.
+        
+        Args:
+            number_of_inputs: The number of inputs to the network.
+            network_architecture: List of lists representing layers.
+                Each inner list has two elements. First element represents
+                number of hidden nodes on the layer, and the second element
+                represents an activation function used for the layer. The 
+                last element of the outer list is considered to be the
+                output layer.
+        """
         self.number_of_inputs = number_of_inputs
         self.layers = []
         for i, item in enumerate(network_architecture):
@@ -641,8 +723,14 @@ class NeuralNetwork:
         return neural_network
                 
     
-    def predict(self, inputs):
+    def predict(self, inputs: np.ndarray):
         """Predicts value for given predictor values.
+        
+        Args:
+            inputs: Inputs to the network.
+        
+        Returns:
+            A float representing the predicted value.
         """
         for i, layer in enumerate(self.layers):
             if i == 0:
@@ -653,9 +741,11 @@ class NeuralNetwork:
         return self.layers[-1].output
 
 
-# Example
+
+# === EXAMPLE ===
 
 if __name__ == "__main__":
+
     # Load min and max values for the destandardisation process.
     with open("standardisation.json", "r") as f:
         min_max_values = json.load(f)
@@ -664,7 +754,6 @@ if __name__ == "__main__":
     max_value = min_max_values["max"]
 
     # Load data.
-
     training_set = pd.read_csv("data/training-set.csv")
     training_set = training_set.to_numpy() # Convert to a numpy array.
     training_set = training_set[:, 1:] # Get rid of the index column.
@@ -677,15 +766,19 @@ if __name__ == "__main__":
     test_set = test_set.to_numpy() # Convert to a numpy array.
     test_set = test_set[:, 1:] # Get rid of the index column.
 
+    # Create a neural network.
     neural_network = NeuralNetwork(
         number_of_inputs=training_set.shape[1]-1,
         network_architecture=[[6, Sigmoid()], [1, Sigmoid()]]
     )
 
+    # Create a backpropagation instance.
     backpropagation = Backpropagation(
         neural_network=neural_network
     )
        
+
+    # Train.
     start_time = time.perf_counter()
     backpropagation.train(
         training_set=training_set,
@@ -694,9 +787,9 @@ if __name__ == "__main__":
         max_value=max_value,
         min_value=min_value,
         learning_rate=0.2,
-        epoch_limit=10000,
+        epoch_limit=500,
         momentum=0.0,
-        bold_driver=1000,
+        bold_driver=np.inf,
         simulated_annealing=False,
         weight_decay=False
     )
