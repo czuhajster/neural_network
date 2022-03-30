@@ -466,11 +466,9 @@ class Backpropagation:
             learning_rate = learning_rate * 0.7
             for layer in self.neural_network.layers:
                 layer.restore_weights_and_biases()
-            print("Error increased")
         elif ((current_training_error / self.previous_training_error) * 100) <= 96:
             # Increase the learning rate if the error has decreased.
             learning_rate = learning_rate * 1.05
-            print("Error decreased")
         # Check if the learning rate is the range.
         if learning_rate < 0.01:
             learning_rate = 0.01
