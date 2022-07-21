@@ -1,4 +1,5 @@
 """Backpropagation training algorithm."""
+import numpy as np
 
 class Backpropagation:
     """Backpropagation algorithm for training neural networks.
