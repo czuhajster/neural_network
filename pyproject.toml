@@ -1,0 +1,16 @@
+[project]
+name = "neural_network"
+authors = [
+    { name="Arkadiusz Podkowa" }
+]
+description = "Implementation of a neural network in Python using only scientific libraries."
+readme = "README.md"
+
+[project.urls]
+"Homepage" = "https://github.com/czuhajster/neural_network/"
+"Bug Tracker" = "https://github.com/czuhajster/neural_network/issues"
+
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backed = "setuptools.build_meta"
